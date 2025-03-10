@@ -45,6 +45,22 @@ export default function LiveSimulator({
   const [hearts, setHearts] = useState<HeartAnimation[]>([]);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const commentsRef = useRef<HTMLDivElement>(null);
+  const [cameraError, setCameraError] = useState<boolean>(false);
+
+  // Clean up camera stream when component unmounts
+  useEffect(() => {
+    return () => {
+      // Stop all video streams when component unmounts
+      const videoElements = document.querySelectorAll("video");
+      videoElements.forEach((video) => {
+        if (video.srcObject) {
+          const stream = video.srcObject as MediaStream;
+          const tracks = stream.getTracks();
+          tracks.forEach((track) => track.stop());
+        }
+      });
+    };
+  }, []);
 
   // Increment viewer count periodically
   useEffect(() => {
@@ -74,7 +90,7 @@ export default function LiveSimulator({
           const newComment = {
             id: Date.now(),
             username: generateFakeUsername(),
-            text: generateFakeComment(),
+            text: addKenyanFlag(generateFakeComment()),
             timestamp: Date.now(),
           };
           setComments((prev) => [...prev.slice(-19), newComment]);
@@ -118,6 +134,15 @@ export default function LiveSimulator({
     return () => clearInterval(interval);
   }, []);
 
+  // Add Kenyan flag emoji to some comments
+  const addKenyanFlag = (comment: string): string => {
+    // 30% chance to add Kenyan flag if it doesn't already have one
+    if (Math.random() > 0.7 && !comment.includes("🇰🇪")) {
+      return `${comment} 🇰🇪`;
+    }
+    return comment;
+  };
+
   // Generate heart animations
   useEffect(() => {
     const interval = setInterval(
@@ -156,8 +181,47 @@ export default function LiveSimulator({
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
+  const switchCamera = () => {
+    const videoElement = document.querySelector("video");
+    if (videoElement && videoElement.srcObject) {
+      const stream = videoElement.srcObject as MediaStream;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+
+      // Switch camera if available
+      const facingMode =
+        tracks[0].getSettings().facingMode === "user" ? "environment" : "user";
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode }, audio: false })
+        .then((newStream) => {
+          videoElement.srcObject = newStream;
+          setCameraError(false);
+        })
+        .catch((err) => {
+          console.error("Error switching camera:", err);
+          setCameraError(true);
+        });
+    }
+  };
+
+  const requestCameraPermission = () => {
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then((stream) => {
+        const videoElement = document.querySelector("video");
+        if (videoElement) {
+          videoElement.srcObject = stream;
+          setCameraError(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Error accessing camera:", err);
+        setCameraError(true);
+      });
+  };
+
   return (
-    <div className="relative flex flex-col h-screen bg-black text-white overflow-hidden">
+    <div className="relative flex flex-col h-screen w-full max-w-md mx-auto bg-black text-white overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 z-10">
         <div className="flex items-center space-x-2">
@@ -195,12 +259,37 @@ export default function LiveSimulator({
         {formatElapsedTime(elapsedTime)}
       </div>
 
-      {/* Main content area - this would be where the camera feed would be */}
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
-        <div className="text-center text-gray-400">
-          <p className="text-sm">Camera preview would appear here</p>
-          <p className="text-xs mt-2">This is a simulation only</p>
-        </div>
+      {/* Camera feed area */}
+      <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900">
+        <video
+          ref={(videoElement) => {
+            // Initialize camera when component mounts
+            if (videoElement && !videoElement.srcObject) {
+              requestCameraPermission();
+            }
+          }}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+
+        {cameraError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+            <div className="text-center p-4">
+              <p className="mb-4">
+                Camera access is required for the live experience
+              </p>
+              <Button
+                onClick={requestCameraPermission}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Enable Camera
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Join notifications */}
@@ -246,8 +335,32 @@ export default function LiveSimulator({
         ))}
       </div>
 
-      {/* Comment input */}
+      {/* Camera controls and comment input */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/80 border-t border-gray-800">
+        <div className="flex justify-center mb-3 space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={switchCamera}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-camera"
+            >
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </Button>
+        </div>
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Add a comment..."
