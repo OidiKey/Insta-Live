@@ -10,6 +10,8 @@ const instagramButtonVariants = cva(
         default:
           "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white hover:from-purple-600 hover:via-pink-600 hover:to-orange-600",
         live: "bg-gradient-to-r from-pink-500 to-red-500 text-white hover:from-pink-600 hover:to-red-600",
+        secondary:
+          "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600",
         outline:
           "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
       },

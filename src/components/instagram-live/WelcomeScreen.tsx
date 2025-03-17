@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { InstagramButton } from "@/components/ui/instagram-button";
 import { Instagram } from "lucide-react";
 
 interface WelcomeScreenProps {
@@ -23,12 +23,13 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
         across your screen.
       </p>
 
-      <Button
+      <InstagramButton
         onClick={onGetStarted}
-        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+        variant="secondary"
+        className="w-full"
       >
         Get Started
-      </Button>
+      </InstagramButton>
 
       <p className="text-xs text-gray-500 text-center">
         This is a simulation only. No actual live streaming occurs.

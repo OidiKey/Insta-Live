@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { InstagramButton } from "@/components/ui/instagram-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings } from "lucide-react";
 
@@ -32,12 +33,9 @@ export default function MainMenu({
       </div>
 
       <div className="w-full space-y-4">
-        <Button
-          onClick={onStartLive}
-          className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600"
-        >
+        <InstagramButton onClick={onStartLive} className="w-full">
           Start Live Simulation
-        </Button>
+        </InstagramButton>
 
         <Button
           onClick={onEditProfile}

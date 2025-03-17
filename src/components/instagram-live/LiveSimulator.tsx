@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { User, X, Heart, Send } from "lucide-react";
 import { generateFakeComment, generateFakeUsername } from "@/lib/fakeData";
+import HeartAnimation from "./HeartAnimation";
+import CommentItem from "./CommentItem";
+import JoinNotification from "./JoinNotification";
+import CameraControls from "./CameraControls";
+import LiveHeader from "./LiveHeader";
+import { AnimatePresence } from "framer-motion";
 
 interface LiveSimulatorProps {
   username: string;
@@ -223,36 +226,12 @@ export default function LiveSimulator({
   return (
     <div className="relative flex flex-col h-screen w-full max-w-md mx-auto bg-black text-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 z-10">
-        <div className="flex items-center space-x-2">
-          <Avatar className="w-8 h-8 border border-gray-500">
-            <AvatarImage src={profilePicture} alt={username} />
-            <AvatarFallback className="bg-gray-700">
-              <User className="w-4 h-4" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold">{username}</span>
-            <div className="bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-sm font-bold">
-              LIVE
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">{viewerCount}</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onExit}
-            className="text-white"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
+      <LiveHeader
+        username={username}
+        profilePicture={profilePicture}
+        viewerCount={viewerCount}
+        onExit={onExit}
+      />
 
       {/* Live duration */}
       <div className="absolute top-14 left-4 bg-black/50 px-2 py-1 rounded text-xs">
@@ -294,31 +273,28 @@ export default function LiveSimulator({
 
       {/* Join notifications */}
       <div className="absolute top-20 left-4 flex flex-col space-y-2">
-        {joinNotifications.map((notification) => (
-          <div
-            key={notification.id}
-            className="bg-black/50 text-white text-xs px-3 py-1.5 rounded-full animate-fadeIn"
-          >
-            {notification.username} joined
-          </div>
-        ))}
+        <AnimatePresence>
+          {joinNotifications.map((notification) => (
+            <JoinNotification
+              key={notification.id}
+              id={notification.id}
+              username={notification.username}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Heart animations */}
       <div className="absolute bottom-20 right-0 w-24 h-64 pointer-events-none overflow-hidden">
         {hearts.map((heart) => (
-          <div
+          <HeartAnimation
             key={heart.id}
-            className="absolute bottom-0 animate-floatUp"
-            style={{
-              left: `${heart.x}%`,
-              color: heart.color,
-              fontSize: `${heart.size}px`,
-              animationDuration: `${heart.duration}s`,
-            }}
-          >
-            <Heart fill="currentColor" />
-          </div>
+            id={heart.id}
+            x={heart.x}
+            color={heart.color}
+            size={heart.size}
+            duration={heart.duration}
+          />
         ))}
       </div>
 
@@ -328,49 +304,17 @@ export default function LiveSimulator({
         className="absolute bottom-16 left-0 right-0 max-h-64 overflow-y-auto px-4 py-2 scrollbar-hide"
       >
         {comments.map((comment) => (
-          <div key={comment.id} className="mb-2 animate-fadeIn">
-            <span className="font-semibold">{comment.username}</span>
-            <span className="ml-2">{comment.text}</span>
-          </div>
+          <CommentItem
+            key={comment.id}
+            id={comment.id}
+            username={comment.username}
+            text={comment.text}
+          />
         ))}
       </div>
 
       {/* Camera controls and comment input */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/80 border-t border-gray-800">
-        <div className="flex justify-center mb-3 space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full bg-white/10 text-white hover:bg-white/20"
-            onClick={switchCamera}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-camera"
-            >
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-              <circle cx="12" cy="13" r="3" />
-            </svg>
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Add a comment..."
-            className="bg-transparent border-gray-700 text-white"
-          />
-          <Button variant="ghost" size="icon" className="text-white">
-            <Send className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
+      <CameraControls onSwitchCamera={switchCamera} />
     </div>
   );
 }
